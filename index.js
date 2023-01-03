@@ -1,32 +1,149 @@
-// Create the playable character
-const pc = newPlayableCharacter(100, 110)
+const canvas = document.querySelector('canvas')
+  const c = canvas.getContext('2d')
 
-// Create a non-playable character
-const npc = newNonPlayableCharacter(50, 300)
+  canvas.width = innerWidth
+  canvas.height = innerHeight
 
-// have the NPC start walking east immediately
-const moveNPC = async () => {
-    await npc.walkNorth(1400)                               
-    await npc.walkEast(1200)                              
-    await npc.walkSouth(300)                              
-    await npc.walkEast(1500)                              
-    await npc.walkSouth(1500)                              
-    await npc.walkWest(2700)                              
-    await npc.walkNorth(400)                                           
- 
- }
- moveNPC()
+  class Paddle {
+    constructor({ position }) {
+      this.position = position
+      this.velocity = {
+        x: 0,
+        y: 0,
+      }
+      this.width = 10
+      this.height = 100
+    }
 
-// Create the inventory
-const inventory = newInventory()
-move(inventory).to(0, 0)
+    draw() {
+      c.fillStyle = 'black'
+      c.fillRect(this.position.x, this.position.y, this.width, this.height)
+    }
 
-// Create everything else
-move(newImage('assets/tree.png')).to(200, 450)
-move(newImage('assets/pillar.png')).to(350, 250)
-move(newImage('assets/pine-tree.png')).to(450, 350)
-move(newImage('assets/crate.png')).to(150, 350)
-move(newImage('assets/well.png')).to(500, 575)
-move(newItem('assets/sword.png')).to(500, 555)
-move(newItem('assets/shield.png')).to(165, 335)
-move(newItem('assets/staff.png')).to(600, 250)
+    update() {
+      this.draw()
+
+      if (
+        this.position.y + this.velocity.y > 0 &&
+        this.position.y + this.height + this.velocity.y < canvas.height
+      )
+        this.position.y += this.velocity.y
+    }
+  }
+
+  class Ball {
+    constructor({ position }) {
+      this.position = position
+
+      const speed = 2
+      const direction = {
+        x: Math.random() - 0.5 >= 0 ? -speed : speed,
+        y: Math.random() - 0.5 >= 0 ? -speed : speed,
+      }
+      this.velocity = {
+        x: direction.x,
+        y: direction.y,
+      }
+
+      this.width = 10
+      this.height = 10
+    }
+
+    draw() {
+      c.fillStyle = 'black'
+      c.fillRect(this.position.x, this.position.y, this.width, this.height)
+    }
+
+    update() {
+      this.draw()
+      const rightSide = this.position.x + this.width + this.velocity.x
+      const leftSide = this.position.x + this.velocity.x
+      const bottomSide = this.position.y + this.height
+      const topSide = this.position.y
+
+      // paddle 1 collision
+      if (
+        leftSide <= paddle1.position.x + paddle1.width &&
+        bottomSide >= paddle1.position.y &&
+        topSide <= paddle1.position.y + paddle1.height
+      ) {
+        this.velocity.x = -this.velocity.x
+      }
+
+      // paddle 2 collision
+      if (
+        rightSide >= paddle2.position.x &&
+        bottomSide >= paddle2.position.y &&
+        topSide <= paddle2.position.y + paddle2.height
+      ) {
+        this.velocity.x = -this.velocity.x
+      }
+
+      // reverse y directions
+      if (
+        this.position.y + this.height + this.velocity.y >= canvas.height ||
+        this.position.y + this.velocity.y <= 0
+      ) {
+        this.velocity.y = -this.velocity.y
+      }
+
+      this.position.x += this.velocity.x
+      this.position.y += this.velocity.y
+    }
+  }
+
+  const paddle1 = new Paddle({
+    position: {
+      x: 10,
+      y: 100,
+    },
+  })
+
+  const paddle2 = new Paddle({
+    position: {
+      x: canvas.width - 10 * 2,
+      y: 100,
+    },
+  })
+
+  const ball = new Ball({
+    position: {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+    },
+  })
+
+  function animate() {
+    requestAnimationFrame(animate)
+    c.fillStyle = 'white'
+    c.fillRect(0, 0, canvas.width, canvas.height)
+    paddle1.update()
+    paddle2.update()
+
+    ball.update()
+  }
+
+  animate()
+
+
+  addEventListener('keydown', (event) => {
+    switch (event.key) {
+      case 'q':
+        // go up
+        paddle1.velocity.y = -speed
+        break
+      case 'a':
+        // go down
+        paddle1.velocity.y = speed
+        break
+
+      case 'ArrowUp':
+        // go up
+        paddle2.velocity.y = -speed
+        break
+      case 'ArrowDown':
+        // go down
+        paddle2.velocity.y = speed
+        break
+    }
+})
